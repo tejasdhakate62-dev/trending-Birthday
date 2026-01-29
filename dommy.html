@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For  ALA| Cinematic Birthday Tribute</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg: #050507;
+            --gold: #d4af37;
+            --rose: #ff4d6d;
+            --accent: #00f2ff;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        #fireworksCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content-wrapper { position: relative; z-index: 10; }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 10vw, 6rem);
+            letter-spacing: 15px;
+            font-weight: 900;
+            margin: 0;
+            background: linear-gradient(to bottom, #fff, var(--rose));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px rgba(255, 77, 109, 0.5));
+        }
+
+        .message-intro {
+            max-width: 700px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-top: 25px;
+            color: #ccc;
+            letter-spacing: 1px;
+        }
+
+        .memory-grid {
+            padding: 50px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-item {
+            height: 350px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.5s;
+        }
+
+        .grid-item img { width: 100%; height: 100%; object-fit: cover; transition: 0.6s; }
+        .grid-item:hover img { transform: scale(1.1); }
+
+        /* REALISTIC CAKE & CANDLE */
+        .cake-stage {
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .realistic-cake {
+            display: flex;
+            align-items: flex-end;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cake-half {
+            width: 120px;
+            height: 90px;
+            background: #4d2b19;
+            border-top: 15px solid var(--rose);
+            position: relative;
+            transition: 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .left-half { border-radius: 20px 0 0 10px; }
+        .right-half { border-radius: 0 20px 10px 0; }
+
+        .is-cut .left-half { transform: translateX(-70px) rotate(-15deg); }
+        .is-cut .right-half { transform: translateX(70px) rotate(15deg); }
+
+        .candle-wrapper {
+            position: absolute;
+            top: -95px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .candle-body {
+            width: 16px;
+            height: 70px;
+            background: linear-gradient(to right, #fff1eb, #fff, #fff1eb);
+            border-radius: 3px;
+        }
+
+        .flame-container {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 35px;
+            animation: flicker 0.1s infinite alternate;
+        }
+
+        .flame-main {
+            width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #fff 0%, #ffeb3b 20%, #ff9800 50%, #ff5722 90%);
+            border-radius: 50% 50% 20% 20% / 70% 70% 30% 30%;
+            filter: blur(1px);
+            box-shadow: 0 0 15px #ff9800, 0 0 30px #ff5722;
+        }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(0.95) rotate(-2deg); }
+            100% { transform: translateX(-50%) scale(1.05) rotate(2deg); }
+        }
+
+        .smoke {
+            position: absolute;
+            top: -50px; left: 50%;
+            width: 4px; height: 0;
+            background: rgba(255,255,255,0.2);
+            filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .is-cut .flame-container { display: none; }
+        .is-cut .smoke {
+            animation: rise 2.5s ease-out forwards;
+        }
+
+        @keyframes rise {
+            0% { opacity: 0.8; height: 10px; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; height: 120px; transform: translateX(-50%) translateY(-150px) scaleX(3); }
+        }
+
+        .final-wish { height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        #launch-btn {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            padding: 20px 50px;
+            font-size: 1.1rem;
+            letter-spacing: 5px;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: 0.4s;
+        }
+
+        #launch-btn:hover { background: var(--gold); color: #000; box-shadow: 0 0 50px var(--gold); }
+    </style>
+</head>
+<body>
+
+    <audio id="birthdayMusic" loop>
+        <source src="happy-birthday-342117.mp3" type="audio/mpeg">
+    </audio>
+
+    <canvas id="fireworksCanvas"></canvas>
+
+    <div class="content-wrapper">
+        <section class="hero">
+            <p style="letter-spacing: 8px; font-size: 0.7rem; color: var(--accent);">HAPPY BIRTHDAY ALA</p>
+            <h1>ALA</h1>
+            <p class="message-intro">Makes Your Journey Beutiful And Fully With Happyness.
+            </p>
+        </section>
+
+        <div class="memory-grid">
+            <div class="grid-item"><img src="200-Best-And-Sweet-Happy-Birthda.jpg" alt="Memory 1"></div>
+            <div class="grid-item"><img src="images (1).jpg" alt="Memory 2"></div>
+            <div class="grid-item"><img src="images.jpg" alt="Memory 3"></div>
+            <div class="grid-item"><img src="joyful-birthday-party-stockcake.jpg" alt="Memory 4"></div>
+        </div>
+
+        <section class="cake-stage">
+            <h2 style="letter-spacing: 3px; color: var(--gold); margin-bottom: 80px;">TAP THE CAKE TO CUT</h2>
+            <div class="realistic-cake" id="birthdayCake" onclick="cutTheCake()">
+                <div class="cake-half left-half">
+                    <div class="candle-wrapper">
+                        <div class="smoke"></div>
+                        <div class="flame-container"><div class="flame-main"></div></div>
+                        <div class="candle-body"></div>
+                    </div>
+                </div>
+                <div class="cake-half right-half"></div>
+            </div>
+        </section>
+
+        <section class="final-wish">
+            <button id="launch-btn">GRAND FINALE 🎆</button>
+        </section>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        const music = document.getElementById('birthdayMusic');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Firework {
+            constructor(tx, ty) {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height;
+                this.tx = tx || Math.random() * canvas.width;
+                this.ty = ty || Math.random() * (canvas.height / 2);
+                this.speed = 4;
+                this.angle = Math.atan2(this.ty - this.y, this.tx - this.x);
+                this.hue = Math.random() * 360;
+                this.traveled = 0;
+                this.dist = Math.sqrt(Math.pow(this.tx-this.x,2)+Math.pow(this.ty-this.y,2));
+            }
+            update(i) {
+                this.traveled = Math.sqrt(Math.pow(this.x-this.tx,2)+Math.pow(this.y-this.ty,2));
+                if(this.traveled < 10) { this.explode(); fireworks.splice(i,1); }
+                else { this.x += Math.cos(this.angle)*this.speed; this.y += Math.sin(this.angle)*this.speed; }
+            }
+            draw() {
+                ctx.beginPath(); ctx.moveTo(this.x,this.y);
+                ctx.lineTo(this.x - Math.cos(this.angle)*10, this.y - Math.sin(this.angle)*10);
+                ctx.strokeStyle = `hsl(${this.hue}, 100%, 70%)`; ctx.stroke();
+            }
+            explode() { for(let i=0; i<75; i++) particles.push(new Particle(this.tx,this.ty,this.hue)); }
+        }
+
+        class Particle {
+            constructor(x,y,h) {
+                this.x=x; this.y=y; this.hue=h + (Math.random()*40-20);
+                this.friction=0.95; this.gravity=0.7; this.alpha=1;
+                this.speed=Math.random()*12+2; this.angle=Math.random()*Math.PI*2;
+            }
+            update(i) {
+                this.speed*=this.friction; this.x+=Math.cos(this.angle)*this.speed;
+                this.y+=Math.sin(this.angle)*this.speed+this.gravity;
+                this.alpha-=0.012; if(this.alpha<=0) particles.splice(i,1);
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x,this.y,1.5,0,Math.PI*2);
+                ctx.fillStyle=`hsla(${this.hue},100%,50%,${this.alpha})`; ctx.fill();
+            }
+        }
+
+        const fireworks = []; const particles = [];
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.2)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            fireworks.forEach((f,i)=>f.update(i)); fireworks.forEach(f=>f.draw());
+            particles.forEach((p,i)=>p.update(i)); particles.forEach(p=>p.draw());
+            if(Math.random()<0.03) fireworks.push(new Firework());
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        function cutTheCake() {
+            const cake = document.getElementById('birthdayCake');
+            if(!cake.classList.contains('is-cut')) {
+                cake.classList.add('is-cut');
+                music.play().catch(e => console.log("Music play blocked until user clicks"));
+                confetti({ particleCount: 200, spread: 100, origin: { y: 0.7 } });
+            }
+        }
+
+        const btn = document.getElementById('launch-btn');
+        let timer;
+        const start = () => { 
+            music.play();
+            timer = setInterval(() => fireworks.push(new Firework()), 120); 
+        };
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', () => clearInterval(timer));
+        btn.addEventListener('mouseleave', () => clearInterval(timer));
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); start(); });
+        btn.addEventListener('touchend', () => clearInterval(timer));
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
